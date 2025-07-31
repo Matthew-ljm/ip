@@ -17,7 +17,7 @@
             
             try {
                 // 获取IP信息
-                const ipResponse = await fetch('https://ipapi.co/json/');
+                const ipResponse = await fetch('/api/proxy-ip');
                 const ipData = await ipResponse.json();
                 
                 statusEl.textContent = '发送中...';
