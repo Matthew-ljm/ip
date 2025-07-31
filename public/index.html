@@ -1,28 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IP信息发送</title>
+    <title>IP信息发送服务</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
 </head>
 <body>
-    <h1>发送我的IP信息到邮箱</h1>
-    <button id="sendBtn">发送IP信息到huifeidexiaogougou@126.com</button>
-    <p id="status"></p>
-
+    <h1>IP信息发送服务</h1>
+    <p>点击下方按钮将您的IP信息发送到指定邮箱</p>
+    
+    <button id="sendBtn">发送IP信息到邮箱</button>
+    
+    <div id="status"></div>
+    
     <script>
         document.getElementById('sendBtn').addEventListener('click', async () => {
             const statusEl = document.getElementById('status');
-            statusEl.textContent = '获取IP信息中...';
+            statusEl.textContent = '正在获取IP信息...';
+            statusEl.className = '';
             
             try {
-                // 获取IP信息
+                // 1. 通过代理获取IP信息
                 const ipResponse = await fetch('/api/proxy-ip');
+                
+                if (!ipResponse.ok) {
+                    const error = await ipResponse.text();
+                    throw new Error(`获取IP信息失败: ${error}`);
+                }
+                
                 const ipData = await ipResponse.json();
+                statusEl.textContent = '正在发送邮件...';
                 
-                statusEl.textContent = '发送中...';
-                
-                // 调用Vercel API发送邮件
+                // 2. 发送邮件
                 const sendResponse = await fetch('/api/send-ip', {
                     method: 'POST',
                     headers: {
@@ -34,15 +77,25 @@
                     }),
                 });
                 
+                // 检查响应是否为JSON
+                const contentType = sendResponse.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await sendResponse.text();
+                    throw new Error(`服务器返回非JSON响应: ${text}`);
+                }
+                
                 const result = await sendResponse.json();
                 
                 if (sendResponse.ok) {
-                    statusEl.textContent = '发送成功!';
+                    statusEl.textContent = '邮件发送成功！';
+                    statusEl.className = 'success';
                 } else {
-                    statusEl.textContent = `发送失败: ${result.error}`;
+                    throw new Error(result.error || '邮件发送失败');
                 }
             } catch (error) {
-                statusEl.textContent = `出错: ${error.message}`;
+                statusEl.textContent = `错误: ${error.message}`;
+                statusEl.className = 'error';
+                console.error('操作失败:', error);
             }
         });
     </script>
