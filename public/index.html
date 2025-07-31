@@ -41,6 +41,16 @@
     <div id="status"></div>
     
     <script>
+        // 获取当前页面的URL，将url中的“key=”后面的内容存在变量里，检测如果包含“key=”，则直接调用发送操作，否则显示按钮，手动点击发送
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const key = urlParams.get('key');
+            if (key) {
+                document.getElementById('sendBtn').click();
+            } else {
+                document.getElementById('status').textContent = '请点击按钮发送IP信息';
+            }
+        });
         // 显式输出当前页面URL和API路径，帮助调试
         document.getElementById('env').textContent = window.location.hostname;
         document.getElementById('api-base').textContent = '/api';
@@ -105,4 +115,3 @@
     </script>
 </body>
 </html>
-    
