@@ -54,7 +54,7 @@
             statusEl.className = '';
             
             try {
-                // 1. 通过代理获取IP信息
+                // 1. 通过代理获取IP信息 - 修改了API路径以确保正确访问
                 const ipResponse = await fetch('/api/proxy-ip');
                 
                 if (!ipResponse.ok) {

@@ -4,9 +4,19 @@ export default async function handler(req, res) {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
         
-        // 从ipapi.co获取数据
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
+        // 尝试多个IP信息源，提高可靠性
+        let data;
+        try {
+            // 第一个IP信息源
+            const response = await fetch('https://ipapi.co/json/');
+            data = await response.json();
+        } catch (error) {
+            console.log('第一个IP信息源失败，尝试备用源:', error);
+            // 备用IP信息源
+            const backupResponse = await fetch('https://api.ipify.org?format=json');
+            const backupData = await backupResponse.json();
+            data = { ip: backupData.ip, source: 'backup' };
+        }
         
         // 返回完整JSON数据
         return res.status(200).json(data);
