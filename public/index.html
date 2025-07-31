@@ -5,54 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IP信息发送服务</title>
     <style>
-        /* 保持原有样式 */
-        body { max-width: 600px; margin: 0 auto; padding: 20px; text-align: center; }
-        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-        #status { margin-top: 20px; padding: 10px; border-radius: 4px; }
-        .success { background: #dff0d8; color: #3c763d; }
-        .error { background: #f2dede; color: #a94442; }
+        /* 保持原有样式不变 */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            min-height: 24px;
+        }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
     </style>
 </head>
 <body>
     <h1>IP信息发送服务</h1>
+    <p>当前环境: <span id="env"></span></p>
+    <p>API基础路径: <span id="api-base"></span></p>
+    
     <button id="sendBtn">发送IP信息到邮箱</button>
     <div id="status"></div>
     
     <script>
+        // 显式输出当前页面URL和API路径，帮助调试
+        document.getElementById('env').textContent = window.location.hostname;
+        document.getElementById('api-base').textContent = '/api';
+        
         document.getElementById('sendBtn').addEventListener('click', async () => {
             const statusEl = document.getElementById('status');
-            statusEl.textContent = '正在获取信息...';
+            statusEl.textContent = '正在获取IP信息...';
             statusEl.className = '';
             
             try {
-                // 1. 前端直接获取IP（使用无限制的接口）
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const { ip } = await ipResponse.json(); // 只获取IP，避免限流
+                // 显式写出完整请求URL，避免相对路径歧义
+                const ipApiUrl = `${window.location.origin}/api/proxy-ip`;
+                console.log('请求IP信息:', ipApiUrl);
                 
-                // 2. 前端直接获取本地时间（北京时间）
-                const localTime = new Date().toLocaleString('zh-CN', {
-                    timeZone: 'Asia/Shanghai',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
+                const ipResponse = await fetch(ipApiUrl);
+                const ipResponseText = await ipResponse.text();
                 
-                // 3. 构造完整信息（无需第三方地理信息，避免限流）
-                const ipData = {
-                    ip: ip,
-                    localTime: localTime,
-                    timezone: 'Asia/Shanghai',
-                    browser: navigator.userAgent, // 可选：添加浏览器信息
-                    language: navigator.language
-                };
+                if (!ipResponse.ok) {
+                    throw new Error(`获取IP信息失败 [${ipResponse.status}]: ${ipResponseText}`);
+                }
+                
+                let ipData;
+                try {
+                    ipData = JSON.parse(ipResponseText);
+                } catch (e) {
+                    throw new Error(`IP信息解析失败: ${e.message}, 原始内容: ${ipResponseText}`);
+                }
                 
                 statusEl.textContent = '正在发送邮件...';
+                const sendApiUrl = `${window.location.origin}/api/send-ip`;
+                console.log('发送邮件请求:', sendApiUrl);
                 
-                // 4. 发送到后端
-                const sendResponse = await fetch('/api/send-ip', {
+                const sendResponse = await fetch(sendApiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -61,19 +82,27 @@
                     }),
                 });
                 
-                const result = await sendResponse.json();
+                const sendResponseText = await sendResponse.text();
+                let result;
+                try {
+                    result = JSON.parse(sendResponseText);
+                } catch (e) {
+                    throw new Error(`邮件响应解析失败: ${e.message}, 原始内容: ${sendResponseText}`);
+                }
+                
                 if (sendResponse.ok) {
                     statusEl.textContent = '邮件发送成功！';
                     statusEl.className = 'success';
                 } else {
-                    throw new Error(result.error || '发送失败');
+                    throw new Error(result.error || '邮件发送失败');
                 }
             } catch (error) {
                 statusEl.textContent = `错误: ${error.message}`;
                 statusEl.className = 'error';
-                console.error(error);
+                console.error('操作失败:', error);
             }
         });
     </script>
 </body>
 </html>
+    
