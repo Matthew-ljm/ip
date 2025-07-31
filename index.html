@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP信息发送</title>
+</head>
+<body>
+    <h1>发送我的IP信息到邮箱</h1>
+    <button id="sendBtn">发送IP信息到huifeidexiaogougou@126.com</button>
+    <p id="status"></p>
+
+    <script>
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = '获取IP信息中...';
+            
+            try {
+                // 获取IP信息
+                const ipResponse = await fetch('https://ipapi.co/json/');
+                const ipData = await ipResponse.json();
+                
+                statusEl.textContent = '发送中...';
+                
+                // 调用Vercel API发送邮件
+                const sendResponse = await fetch('/api/send-ip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ipData: ipData,
+                        email: 'huifeidexiaogougou@126.com'
+                    }),
+                });
+                
+                const result = await sendResponse.json();
+                
+                if (sendResponse.ok) {
+                    statusEl.textContent = '发送成功!';
+                } else {
+                    statusEl.textContent = `发送失败: ${result.error}`;
+                }
+            } catch (error) {
+                statusEl.textContent = `出错: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
