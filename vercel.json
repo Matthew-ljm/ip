@@ -12,7 +12,7 @@
       "config": { "maxDuration": 10 }
     },
     {
-      "src": "public/index.html",
+      "src": "index.html",
       "use": "@vercel/static"
     }
   ],
@@ -27,7 +27,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "public/index.html"
+      "dest": "index.html"
     }
   ]
 }
