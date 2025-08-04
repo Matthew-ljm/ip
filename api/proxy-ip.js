@@ -1,21 +1,23 @@
-export default async function handler(req, res) {
+// 保持原有逻辑，使用CommonJS兼容的导出方式
+async function handler(req, res) {
   try {
+    // 设置跨域响应头（Vercel部署需要）
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json');
 
-    // 关键：从请求头中获取用户真实IP（Vercel环境专用）
-    const userIp = req.headers['x-vercel-forwarded-for'] || 
-                   req.headers['x-forwarded-for'] || 
-                   req.socket.remoteAddress;
+    // 获取用户真实IP（适配Vercel的IP转发头）
+    const userIp = req.headers['x-vercel-forwarded-for'] 
+      || req.headers['x-forwarded-for'] 
+      || req.socket.remoteAddress;
 
-    // 调用IP信息接口时，显式传入用户IP
+    // 调用IP信息接口
     const response = await fetch(`https://ipapi.co/${userIp}/json/`);
     const data = await response.json();
 
-    // 如果获取失败， fallback 到直接返回用户IP
+    // 处理接口返回异常的情况
     if (!data.ip) {
       data.ip = userIp;
-      data.country = 'CN'; // 可手动补充默认值
+      data.country = 'CN';
       data.timezone = 'Asia/Shanghai';
     }
 
@@ -30,3 +32,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// 兼容CommonJS的导出方式（关键）
+module.exports = { default: handler };
